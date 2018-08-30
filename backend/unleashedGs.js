@@ -2,7 +2,6 @@
 
 
 
-const fs = require('fs');
 const readline = require('readline');
 const { google } = require('googleapis');
 const { promisify } = require("es6-promisify");
