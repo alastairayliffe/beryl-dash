@@ -12,7 +12,7 @@
 	}
 });
 
-const port = process.env.PORT;
+const port = process.env.PORT_DB;
 const name = process.env.DATABASE;
 const user = process.env.USERNAME;
 const pass = process.env.PASSWORD;

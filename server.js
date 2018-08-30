@@ -28,7 +28,7 @@ app
 	.get('/get/refresh', startIntegration)
 	.post('/post/newCode', newCode)
 	.get('/*', sendIndexHtml)
-	.listen(config.PORT, '0.0.0.0', () => {
-		console.log(`Starting on port ${config.PORT}.`);
-		console.log(`PUBLIC PATH ${config.PUBLIC_PATH}.`);
+	.listen(process.env.PORT, '0.0.0.0', () => {
+		console.log(`Starting on port ${process.env.PORT}`);
+
 	});
