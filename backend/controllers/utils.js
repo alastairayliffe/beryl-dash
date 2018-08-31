@@ -18,7 +18,10 @@ const customerHash = customerData => {
     let newCustomerHashObj = {}
     customerData.forEach(rowCust => {
         let hashedCustValue = rowCust[2]
-        let hashedCustObj = rowCust[1]
+        let hashedCustObj = {
+            channel: rowCust[1],
+            country: rowCust[3]
+        }
         newCustomerHashObj[hashedCustValue] = hashedCustObj
     })
 

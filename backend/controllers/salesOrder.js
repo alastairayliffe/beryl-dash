@@ -41,7 +41,8 @@ const unleashedFetchPrepSo = (auth, mappingArray, customerData, mappingDates) =>
 
 
             const soArrayWithMapping = finalSoArray.map(soLine => {
-                const customerType = customerRow[soLine[5]]
+                const customerType = (customerRow[soLine[5]] != undefined ? customerRow[soLine[5]].channel : '')
+                const country = [(customerRow[soLine[5]] != undefined ? customerRow[soLine[5]].country : '')]
                 const dateData = (dateRow[soLine[17]] != undefined ? dateRow[soLine[17]] : [
                     'old',
                     'old',
@@ -55,7 +56,7 @@ const unleashedFetchPrepSo = (auth, mappingArray, customerData, mappingDates) =>
                     'old',
                 ] )
                 soLine.push(customerType)
-                soLineAdj = soLine.concat(dateData);
+                soLineAdj = soLine.concat(dateData, country );
 
                 if (mappingRow[soLineAdj[8]] != undefined) {
                     const mappingProduct = mappingRow[soLineAdj[8]].productMapping
@@ -75,7 +76,7 @@ const unleashedFetchPrepSo = (auth, mappingArray, customerData, mappingDates) =>
                 return soLineAdj
             })
 
-            return itemsToGs(auth, soArrayWithMapping, 'sales-orders!A2:AD')
+            return itemsToGs(auth, soArrayWithMapping, 'sales-orders!A2:AE')
         })
 }
 
@@ -100,7 +101,6 @@ const inventorySalesOrderPrep = (salesOrders) => {
         const orderDateNew = parseInt(salesOrder.OrderDate.replace('/Date(', '').replace(')/', ''))
         const orderDateNewFormatted = moment(orderDateNew).format("MM/DD/YYYY")
         const orderDateGSFormat = parseInt(25569 + ((orderDateNew / 1000 / 60 / 60 / 24)))
-        console.log(salesOrder.SalesPerson)
         const salesPersonAdj = salesOrder.SalesPerson === null ? '' : salesOrder.SalesPerson.FullName
         let salesItems = salesOrder.SalesOrderLines.map(salesOrderLine => {
             return [

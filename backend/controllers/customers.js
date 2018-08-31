@@ -30,7 +30,7 @@ const unleashedFetchPrepCust = (auth) => {
             allData.forEach(groupCust => {
                 finalCustArray.push(...groupCust)
             })
-            return itemsToGs(auth, finalCustArray,'customers!A2:c' )
+            return itemsToGs(auth, finalCustArray,'customers!A2:D' )
         })
         .then(data => {
             return finalCustArray;
@@ -58,10 +58,15 @@ const unleashedData = (auth, pageSize, pageNum) => {
 const inventoryCustomerPrep = (customers) => {
 
     return customers.Items.map(customer => {
+        let country = ''
+        customer.Addresses.forEach(address => {
+            country = address.Country
+        })
         return [
             customer.CustomerCode,
             customer.CustomerType,
-            customer.Guid
+            customer.Guid,
+            country
         ]
 
     })

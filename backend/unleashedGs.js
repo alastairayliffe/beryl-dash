@@ -6,6 +6,7 @@ const { unleashedFetchPrepSo } = require('./controllers/salesOrder')
 const { unleashedFetchPrepCust } = require('./controllers/customers')
 const { unleashedFetchPrepInv } = require('./controllers/inventoryOnHand')
 const { getProductMapping } = require('./controllers/productMapping')
+const { unleashedFetchPrepAdj } = require('./controllers/stockAdjustments')
 const { mappingHash } = require('./controllers/utils')
 const { getDateMapping } = require('./controllers/dateMapping')
 const {
@@ -128,26 +129,30 @@ const unleashedFetchPrep = async (auth) => {
     let customerData = [];
     return getProductMapping(auth, 'product-mapping!A2:E')
         .then(responseRows => {
-            console.log('product mapping')
+            console.log('product mapping done.')
             
             mappingRows = (responseRows != undefined ? responseRows : []);
             return getDateMapping(auth, 'date-mapping!A2:J')
         })
         .then(responseDates => {
-            console.log('date mapping')
+            console.log('date mapping done.')
             
             mappingDates = (responseDates != undefined ? responseDates : []);
             return unleashedFetchPrepCust(auth)
         })
 
         .then(resCustData => {
-            console.log('customer data')
+            console.log('customer data done.')
             customerData = resCustData;
             return unleashedFetchPrepInv(auth, mappingRows)
         })
         .then(inventory => {
-            console.log('inventory')
+            console.log('inventory done.')
             return unleashedFetchPrepSo(auth, mappingRows, customerData, mappingDates)
+        })
+        .then(salesOrders => {
+            console.log('sales orders done.')
+            return unleashedFetchPrepAdj(auth, mappingRows, mappingDates)
         })
         .catch(err => {
             console.log('The API returned an error: ' + err);
