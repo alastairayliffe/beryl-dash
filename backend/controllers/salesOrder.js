@@ -2,7 +2,11 @@ const fetch = require('node-fetch');
 const moment = require('moment');
 const { google } = require('googleapis');
 const { testingFunc } = require('./testing')
-const { mappingHash, customerHash } = require('./utils')
+const {
+    mappingHash,
+    customerHash,
+    mappingDatesFunc
+} = require('./utils')
 const {
     fetchGetUnleashed,
     itemsToGs
@@ -10,7 +14,7 @@ const {
 
 
 
-const unleashedFetchPrepSo = (auth, mappingArray, customerData) => {
+const unleashedFetchPrepSo = (auth, mappingArray, customerData, mappingDates) => {
     let additionalMapping = mappingArray
     return unleashedData(auth, '1')
         .then(data => {
@@ -33,31 +37,45 @@ const unleashedFetchPrepSo = (auth, mappingArray, customerData) => {
 
             const mappingRow = mappingHash(mappingArray)
             const customerRow = customerHash(customerData)
-    
+            const dateRow = mappingDatesFunc(mappingDates)
+
 
             const soArrayWithMapping = finalSoArray.map(soLine => {
-                const customerType = customerRow[soLine[4]]
+                const customerType = customerRow[soLine[5]]
+                const dateData = (dateRow[soLine[17]] != undefined ? dateRow[soLine[17]] : [
+                    'old',
+                    'old',
+                    'old',
+                    'old',
+                    'old',
+                    'old',
+                    'old',
+                    'old',
+                    'old',
+                    'old',
+                ] )
                 soLine.push(customerType)
+                soLineAdj = soLine.concat(dateData);
 
-                if( mappingRow[soLine[7]] != undefined){
-                 const mappingProduct = mappingRow[soLine[7]].productMapping
-        
-                 soLine.push(mappingProduct)
+                if (mappingRow[soLineAdj[8]] != undefined) {
+                    const mappingProduct = mappingRow[soLineAdj[8]].productMapping
+
+                    soLineAdj.push(mappingProduct)
                 } else {
-                    if(soLine[7] === '00000000-0000-0000-0000-000000000000') {
-                        soLine.push('shipping')
+                    if (soLineAdj[7] === '00000000-0000-0000-0000-000000000000') {
+                        soLineAdj.push('shipping')
                     } else {
-                        soLine.push('add_to_inventory')
+                        soLineAdj.push('add_to_inventory')
 
-              
+
                     }
                 }
-                
-          
-                return soLine
+
+
+                return soLineAdj
             })
 
-            return itemsToGs(auth, soArrayWithMapping,'sales-orders!A2:r' )
+            return itemsToGs(auth, soArrayWithMapping, 'sales-orders!A2:AD')
         })
 }
 
@@ -81,11 +99,14 @@ const inventorySalesOrderPrep = (salesOrders) => {
     salesOrders.Items.forEach(salesOrder => {
         const orderDateNew = parseInt(salesOrder.OrderDate.replace('/Date(', '').replace(')/', ''))
         const orderDateNewFormatted = moment(orderDateNew).format("MM/DD/YYYY")
-
+        const orderDateGSFormat = parseInt(25569 + ((orderDateNew / 1000 / 60 / 60 / 24)))
+        console.log(salesOrder.SalesPerson)
+        const salesPersonAdj = salesOrder.SalesPerson === null ? '' : salesOrder.SalesPerson.FullName
         let salesItems = salesOrder.SalesOrderLines.map(salesOrderLine => {
             return [
                 orderDateNewFormatted,
                 salesOrder.OrderNumber,
+                salesPersonAdj,
                 salesOrder.Customer.CustomerCode,
                 salesOrder.Customer.CustomerName,
                 salesOrder.Customer.Guid,
@@ -99,7 +120,8 @@ const inventorySalesOrderPrep = (salesOrders) => {
                 salesOrderLine.DiscountRate,
                 salesOrderLine.LineTotal,
                 salesOrderLine.Guid,
-                salesOrderLine.UnitPrice
+                salesOrderLine.UnitPrice,
+                orderDateGSFormat
             ]
         })
         finalItem.push(...salesItems)

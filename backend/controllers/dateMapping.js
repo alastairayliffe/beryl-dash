@@ -4,9 +4,7 @@ const { google } = require('googleapis');
 const { promisify } = require("es6-promisify");
 
 
-
-
-const getProductMapping = async (auth, range) => {
+const getDateMapping = async (auth, range) => {
     const sheets = google.sheets({ version: 'v4' });
     const asyncAppend = promisify(sheets.spreadsheets.values.get, sheets.spreadsheets.values);
     return asyncAppend({
@@ -26,5 +24,5 @@ const getProductMapping = async (auth, range) => {
 }
 
 module.exports = {
-    getProductMapping
+    getDateMapping
 }

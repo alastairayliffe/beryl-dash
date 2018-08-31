@@ -1,7 +1,3 @@
-
-
-
-
 const readline = require('readline');
 const { google } = require('googleapis');
 const { promisify } = require("es6-promisify");
@@ -11,6 +7,7 @@ const { unleashedFetchPrepCust } = require('./controllers/customers')
 const { unleashedFetchPrepInv } = require('./controllers/inventoryOnHand')
 const { getProductMapping } = require('./controllers/productMapping')
 const { mappingHash } = require('./controllers/utils')
+const { getDateMapping } = require('./controllers/dateMapping')
 const {
     createAuthRecord,
     getAuthRecord,
@@ -125,46 +122,24 @@ const newCode = (req, res) => {
         })
 }
 
-
-const getNewToken = (oAuth2Client, callback) => {
-    console.log(' getNewToken', oAuth2Client)
-    const authUrl = oAuth2Client.generateAuthUrl({
-        access_type: 'offline',
-        scope: SCOPES,
-    });
-    console.log('Authorize this app by visiting this url:', authUrl);
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-    });
-    rl.question('Enter the code from that page here: ', (code) => {
-        rl.close();
-        oAuth2Client.getToken(code, (err, token) => {
-            if (err) return console.error('Error while trying to retrieve access token', err);
-            oAuth2Client.setCredentials(token);
-            createAuthRecord({
-                username: 'beryl',
-                gsheetAuth: token
-            })
-                .then(response => {
-                    console.log(response)
-                    return callback(oAuth2Client);
-                })
-
-        });
-    });
-}
-
 const unleashedFetchPrep = async (auth) => {
     let mappingRows = []
+    let mappingDates = []
     let customerData = [];
     return getProductMapping(auth, 'product-mapping!A2:E')
-        .then(response => {
+        .then(responseRows => {
             console.log('product mapping')
             
-            mappingRows = (response != undefined ? response : []);
+            mappingRows = (responseRows != undefined ? responseRows : []);
+            return getDateMapping(auth, 'date-mapping!A2:J')
+        })
+        .then(responseDates => {
+            console.log('date mapping')
+            
+            mappingDates = (responseDates != undefined ? responseDates : []);
             return unleashedFetchPrepCust(auth)
         })
+
         .then(resCustData => {
             console.log('customer data')
             customerData = resCustData;
@@ -172,7 +147,7 @@ const unleashedFetchPrep = async (auth) => {
         })
         .then(inventory => {
             console.log('inventory')
-            return unleashedFetchPrepSo(auth, mappingRows, customerData)
+            return unleashedFetchPrepSo(auth, mappingRows, customerData, mappingDates)
         })
         .catch(err => {
             console.log('The API returned an error: ' + err);
@@ -185,9 +160,6 @@ module.exports = {
     startIntegration,
     newCode
 }
-
-
-
 
 
 

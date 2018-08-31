@@ -1,13 +1,13 @@
 const mappingHash = productRows => {
     let newHashedObj = {}
-     productRows.forEach(row => {
+    productRows.forEach(row => {
         let hashedValue = row[2]
         let hashedObj = {
             productCode: row[0],
             productDescription: row[1],
             productGuid: row[2],
             productGroupName: row[3],
-            productMapping:row[4]
+            productMapping: row[4]
         }
         newHashedObj[hashedValue] = hashedObj
     })
@@ -25,7 +25,18 @@ const customerHash = customerData => {
     return newCustomerHashObj
 }
 
+
+const mappingDatesFunc = datesData => {
+    let newDateHashObj = {};
+    datesData.forEach(rowDate => {
+        let hashedDateValue = rowDate[1]
+        newDateHashObj[hashedDateValue] = rowDate
+    })
+    return newDateHashObj;
+}
+
 module.exports = {
     mappingHash,
-    customerHash
+    customerHash,
+    mappingDatesFunc
 }
