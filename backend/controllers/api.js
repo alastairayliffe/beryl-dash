@@ -1,6 +1,7 @@
 const { hash64Func } = require('./unleashedAuth')
 const { google } = require('googleapis');
 const fetch = require('node-fetch');
+const { promisify } = require("es6-promisify");
 
 
 const fetchGetUnleashed = (auth, endpoint, pageSize, pageNum) => {
@@ -19,6 +20,7 @@ const fetchGetUnleashed = (auth, endpoint, pageSize, pageNum) => {
         }
     })
         .then(response => response.json())
+        .then(data => data)
         .catch(err => console.log('err', err))
   
 };
@@ -43,9 +45,47 @@ const itemsToGs = (auth, lines, range ) => {
     });
 }
 
+const gsPrep = async (auth, range) => {
+    const sheets = google.sheets({ version: 'v4' });
+    const asyncAppend = promisify(sheets.spreadsheets.values.get, sheets.spreadsheets.values);
+    return asyncAppend({
+        auth: auth,
+        spreadsheetId: '1g3C8Ocm_ncRQsrXsqwI1-8BfVh_eICmuWb_G1Hno2g8',
+        range: range,
+    })
+        .then(res => {
+            console.log(res)
+            return res.data.values;
+        })
+        .catch(err => {
+            console.log('The API returned an error: ' + err);
+            return;
+        })
+}
+
+const gsClear = async (auth, range) => {
+    const sheets = google.sheets({ version: 'v4' });
+    const asyncAppend = promisify(sheets.spreadsheets.values.clear, sheets.spreadsheets.values);
+    return asyncAppend({
+        auth: auth,
+        spreadsheetId: '1g3C8Ocm_ncRQsrXsqwI1-8BfVh_eICmuWb_G1Hno2g8',
+        range: range,
+    })
+        .then(res => {
+            console.log(res)
+            return res.data.values;
+        })
+        .catch(err => {
+            console.log('The API returned an error: ' + err);
+            return;
+        })
+}
+
 
 
 module.exports = {
     fetchGetUnleashed,
     itemsToGs,
+    gsPrep,
+    gsClear 
 }

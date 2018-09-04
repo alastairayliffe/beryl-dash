@@ -2,19 +2,24 @@ const readline = require('readline');
 const { google } = require('googleapis');
 const { promisify } = require("es6-promisify");
 
-const { unleashedFetchPrepSo } = require('./controllers/salesOrder')
-const { unleashedFetchPrepCust } = require('./controllers/customers')
-const { unleashedFetchPrepInv } = require('./controllers/inventoryOnHand')
-const { getProductMapping } = require('./controllers/productMapping')
-const { unleashedFetchPrepAdj } = require('./controllers/stockAdjustments')
-const { mappingHash } = require('./controllers/utils')
-const { getDateMapping } = require('./controllers/dateMapping')
+const { cleanData } = require('./controllers/cleanData')
+const { exportPrep } = require('./controllers/exportPrep')
+const { 
+    itemsToGs,
+    gsPrep,
+    gsClear
+} = require('./controllers/api')
+
 const {
     createAuthRecord,
     getAuthRecord,
     getCredentials,
     oAuth2ClientInsert
 } = require('./controllers/database')
+const {
+    unleashedWithPage,
+    unleashedNoPage
+} = require('./controllers/unleashedPrep')
 
 
 // If modifying these scopes, delete token.json.
@@ -68,8 +73,6 @@ const authorize = (credentials, callback) => {
         .then(response => {
             console.log('oAuth2Client', oAuth2Client)
             return sendBankUrlForAuth(oAuth2Client, credentials)
-            // console.log(test)
-            //return getNewToken(oAuth2Client, callback)
         })
 }
 
@@ -92,13 +95,13 @@ const newCode = (req, res) => {
             console.log(response)
             let oAuth2ClientNew = response.oauth2client
             const credentials = req.body.credentials;
-            
+
             const {
                 client_secret,
                 client_id,
                 redirect_uris
             } = credentials.installed;
-            
+
             const oAuth2Client = new google.auth.OAuth2(
                 client_id,
                 client_secret,
@@ -116,7 +119,7 @@ const newCode = (req, res) => {
                         console.log(response)
                         return startIntegration();
                     })
-    
+
             });
 
 
@@ -124,36 +127,59 @@ const newCode = (req, res) => {
 }
 
 const unleashedFetchPrep = async (auth) => {
-    let mappingRows = []
-    let mappingDates = []
-    let customerData = [];
-    return getProductMapping(auth, 'product-mapping!A2:E')
-        .then(responseRows => {
-            console.log('product mapping done.')
-            
-            mappingRows = (responseRows != undefined ? responseRows : []);
-            return getDateMapping(auth, 'date-mapping!A2:J')
-        })
-        .then(responseDates => {
-            console.log('date mapping done.')
-            
-            mappingDates = (responseDates != undefined ? responseDates : []);
-            return unleashedFetchPrepCust(auth)
-        })
+    let allFetchedData = {};
+    return Promise.all([
+        unleashedWithPage(auth, 'SalesOrders'),
+    ])
+        .then(results => {
+            console.log(results)
+            allFetchedData.salesOrders = results
+            return Promise.all([
+                unleashedWithPage(auth, 'StockOnHand'),
+                unleashedWithPage(auth, 'Customers'),
+                unleashedNoPage(auth, 'StockAdjustments'),
+                gsPrep(auth, 'product-mapping!A2:E'),
+                gsPrep(auth, 'projections!A2:H'),
+                gsPrep(auth, 'date-mapping!A2:J'),
+                gsPrep(auth, 'projection-adjustments!A2:G'),
 
-        .then(resCustData => {
-            console.log('customer data done.')
-            customerData = resCustData;
-            return unleashedFetchPrepInv(auth, mappingRows)
+            ])
         })
-        .then(inventory => {
-            console.log('inventory done.')
-            return unleashedFetchPrepSo(auth, mappingRows, customerData, mappingDates)
+        .then(unleashedResponse => {
+            allFetchedData.stockOnHand = unleashedResponse[0]
+            allFetchedData.customers = unleashedResponse[1]
+            allFetchedData.stockAdjustments = unleashedResponse[2]
+            allFetchedData.productMapping = unleashedResponse[3]
+            allFetchedData.projections = unleashedResponse[4]
+            allFetchedData.dateMapping = unleashedResponse[5]
+            allFetchedData.projectionsAdj = unleashedResponse[6]
+            
+            return Promise.all([
+                gsClear(auth, 'product-mapping!A2:E'),
+                gsClear(auth, 'customers!A2:D'),
+                gsClear(auth, 'inventory!A2:N'),
+                gsClear(auth, 'sales-orders!A2:AE'),
+                gsClear(auth, 'adjustments!A2:X'),
+                gsClear(auth, 'pivot!A2:V'),
+            ])
+
+
         })
-        .then(salesOrders => {
-            console.log('sales orders done.')
-            return unleashedFetchPrepAdj(auth, mappingRows, mappingDates)
+        .then(()=> {
+            return cleanData(allFetchedData)
         })
+        .then(cleanedData => exportPrep(cleanedData))
+        .then(cleanedData => {
+            console.log('pivot', cleanedData.pivot.export)
+            return Promise.all([
+                itemsToGs(auth, cleanedData.customers, 'customers!A2:D'),
+                itemsToGs(auth, cleanedData.stockOnHand, 'inventory!A2:N'),
+                itemsToGs(auth, cleanedData.pivot.export, 'pivot!A2:V'),
+                itemsToGs(auth, cleanedData.prodMap.export, 'product-mapping!A2:E'),
+                itemsToGs(auth, cleanedData.salesOrder, 'sales-orders!A2:AF'),
+                itemsToGs(auth, cleanedData.stockAdjustments, 'adjustments!A2:Y')
+            ])
+         })
         .catch(err => {
             console.log('The API returned an error: ' + err);
         })
