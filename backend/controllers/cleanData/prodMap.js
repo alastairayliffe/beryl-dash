@@ -23,6 +23,6 @@ const prodMapHashed = prodMapArray => {
 
 }
 
-module.export = {
+module.exports = {
     prodMapHashed
 }

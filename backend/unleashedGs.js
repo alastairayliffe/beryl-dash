@@ -160,7 +160,8 @@ const unleashedFetchPrep = async (auth) => {
                 gsClear(auth, 'inventory!A2:N'),
                 gsClear(auth, 'sales-orders!A2:AE'),
                 gsClear(auth, 'adjustments!A2:X'),
-                gsClear(auth, 'pivot!A2:V'),
+                gsClear(auth, 'pivot!A2:AB'),
+                gsClear(auth, 'stock-summary!A2:C'),
             ])
 
 
@@ -174,10 +175,11 @@ const unleashedFetchPrep = async (auth) => {
             return Promise.all([
                 itemsToGs(auth, cleanedData.customers, 'customers!A2:D'),
                 itemsToGs(auth, cleanedData.stockOnHand, 'inventory!A2:N'),
-                itemsToGs(auth, cleanedData.pivot.export, 'pivot!A2:V'),
+                itemsToGs(auth, cleanedData.pivot.export, 'pivot!A2:AB'),
                 itemsToGs(auth, cleanedData.prodMap.export, 'product-mapping!A2:E'),
                 itemsToGs(auth, cleanedData.salesOrder, 'sales-orders!A2:AF'),
-                itemsToGs(auth, cleanedData.stockAdjustments, 'adjustments!A2:Y')
+                itemsToGs(auth, cleanedData.stockAdjustments, 'adjustments!A2:Y'),
+                itemsToGs(auth, cleanedData.mappingSummary, 'stock-summary!A2:C'),
             ])
          })
         .catch(err => {
