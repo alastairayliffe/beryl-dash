@@ -7,6 +7,7 @@ const prodMapHashed = prodMapArray => {
     }
     if (prodMapArray!= undefined && prodMapArray.length > 0) {
         prodMapArray.forEach(prodMap => {
+          
             let prodMapGuid = encodeURIComponent(prodMap[2])
             let prodMapTrim = {
                 ProductCode: prodMap[0],
@@ -17,6 +18,7 @@ const prodMapHashed = prodMapArray => {
             }
             prodMapNew.byHash[prodMapGuid] = prodMapTrim
             prodMapNew.byId.push(prodMapGuid);
+     
         })
     }
     return prodMapNew;

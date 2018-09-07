@@ -140,7 +140,7 @@ const unleashedFetchPrep = async (auth) => {
                 unleashedNoPage(auth, 'StockAdjustments'),
                 gsPrep(auth, 'product-mapping!A2:E'),
                 gsPrep(auth, 'projections!A2:H'),
-                gsPrep(auth, 'date-mapping!A2:J'),
+                gsPrep(auth, 'date-mapping!A2:F'),
                 gsPrep(auth, 'projection-adjustments!A2:G'),
 
             ])
@@ -155,7 +155,7 @@ const unleashedFetchPrep = async (auth) => {
             allFetchedData.projectionsAdj = unleashedResponse[6]
             
             return Promise.all([
-                gsClear(auth, 'product-mapping!A2:E'),
+                //gsClear(auth, 'product-mapping!A2:E'),
                 gsClear(auth, 'customers!A2:D'),
                 gsClear(auth, 'inventory!A2:N'),
                 gsClear(auth, 'sales-orders!A2:AE'),
@@ -177,7 +177,7 @@ const unleashedFetchPrep = async (auth) => {
                 itemsToGs(auth, cleanedData.stockOnHand, 'inventory!A2:N'),
                 itemsToGs(auth, cleanedData.pivot.export, 'pivot!A2:AB'),
                 itemsToGs(auth, cleanedData.prodMap.export, 'product-mapping!A2:E'),
-                itemsToGs(auth, cleanedData.salesOrder, 'sales-orders!A2:AF'),
+                itemsToGs(auth, cleanedData.salesOrder, 'sales-orders!A2:AG'),
                 itemsToGs(auth, cleanedData.stockAdjustments, 'adjustments!A2:Y'),
                 itemsToGs(auth, cleanedData.mappingSummary, 'stock-summary!A2:C'),
             ])

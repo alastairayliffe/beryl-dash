@@ -14,7 +14,9 @@ const salesOrderHashed = salesOrderArray => {
                 const orderDateNew = parseInt(salesOrder.OrderDate.replace('/Date(', '').replace(')/', ''))
                 const orderDateNewFormatted = moment(orderDateNew).format("MM/DD/YYYY")
                 const orderDateGSFormat = parseInt(25569 + ((orderDateNew / 1000 / 60 / 60 / 24)))
-                const salesPersonAdj = salesOrder.SalesPerson === null ? '' : salesOrder.SalesPerson.FullName
+                const salesPersonAdj = salesOrder.SalesOrderGroup
+                const taxRate = (1 + salesOrder.TaxRate)
+
 
                 salesOrder.SalesOrderLines.forEach(salesOrderLine => {
                     let salesOrderLineGuid = salesOrderLine.Guid
@@ -22,6 +24,7 @@ const salesOrderHashed = salesOrderArray => {
                     let salesOrderTrim = {
                         orderDateNewFormatted: orderDateNewFormatted,
                         orderNumber: salesOrder.OrderNumber,
+                        orderStatus: salesOrder.OrderStatus,
                         salesOrderType: salesPersonAdj,
                         customerCode: salesOrder.Customer.CustomerCode,
                         customerName: salesOrder.Customer.CustomerName,
@@ -32,9 +35,9 @@ const salesOrderHashed = salesOrderArray => {
                         productCode: salesOrderLine.Product.ProductCode,
                         productDescription: salesOrderLine.Product.ProductDescription,
                         orderQuantity: salesOrderLine.OrderQuantity,
-                        unitPrice: salesOrderLine.UnitPrice,
+                        unitPrice: (salesOrderLine.UnitPrice / taxRate),
                         discountRate: salesOrderLine.DiscountRate,
-                        lineTotal: salesOrderLine.LineTotal,
+                        lineTotal: (salesOrderLine.LineTotal / taxRate),
                         guid: salesOrderLine.Guid,
                         UnitPrice: salesOrderLine.UnitPrice,
                         orderDateGSFormat: orderDateGSFormat
