@@ -20,14 +20,14 @@ const pivotTablePrep = (cleanedData, prodMap) => {
     for (i = 0; i < 52; i++) {
 
         prodMap.unique.forEach(prod => {
-            const stockFcstId = stockFcstDate + '-' + encodeURIComponent(prod) + '-' + false + '-' + false + '-stockFcst'
+            const stockFcstId = stockFcstDate + '-' + encodeURIComponent(prod) + '-' + false + '-' + false + '-' + false + '-stockFcst'
             pivotTableData.byId.push(stockFcstId)
             pivotTableData.byHash[stockFcstId] = {
                 id: stockFcstId,
                 dateNum: parseInt(stockFcstDate),
                 prodMap: prod,
-                mapExclDate: encodeURIComponent(prod) + '-' + false + '-' + false + '-stockFcst',
                 customerType: false,
+                customerName: '',
                 salesOrderType: false,
                 quantity: 0,
                 quantityAct: 0,
@@ -53,7 +53,7 @@ const pivotTablePrep = (cleanedData, prodMap) => {
             let prodAdjHash = cleanedData.projAdj.byHash[prodAdj];
             const correctProdMap = prodMap.ref[encodeURIComponent(prodAdjHash.prodMap)];
             let stockAdjDateNum = (parseInt((parseInt(prodAdjHash.dateNum) - prevMondayNum) / 7) * 7) + prevMondayNum
-            let stockAdjId = stockAdjDateNum + '-' + encodeURIComponent(correctProdMap.Mapping) + '-' + false + '-' + false + '-stockFcst'
+            let stockAdjId = stockAdjDateNum + '-' + encodeURIComponent(correctProdMap.Mapping) + '-' + false + '-' + false + '-' + false +'-stockFcst'
             if (pivotTableData.byHash[stockAdjId] != undefined) {
                 pivotTableData.byHash[stockAdjId].stockMovement = +parseInt(prodAdjHash.quantity)
             }
@@ -64,18 +64,18 @@ const pivotTablePrep = (cleanedData, prodMap) => {
     cleanedData.projections.byId.forEach(prod => {
         let prodHash = cleanedData.projections.byHash[prod];
 
-        if (parseInt(prodHash.dateNum) >= 43347) {
+        if (parseInt(prodHash.dateNum) >= 43346) {
 
             const correctProdMap = prodMap.ref[encodeURIComponent(prodHash.product)];
             let stockFcstDateNum = (parseInt((parseInt(prodHash.dateNum) - prevMondayNum) / 7) * 7) + prevMondayNum
-            let stockFcstId = stockFcstDateNum + '-' + encodeURIComponent(correctProdMap.Mapping) + '-' + false + '-' + false + '-stockFcst'
+            let stockFcstId = stockFcstDateNum + '-' + encodeURIComponent(correctProdMap.Mapping) + '-' + false + '-' + false + '-' + false +'-stockFcst'
 
 
             if (pivotTableData.byHash[stockFcstId] != undefined) {
                 pivotTableData.byHash[stockFcstId].stockMovement += -parseFloat(prodHash.quantity)
             }
 
-            const prodId = prodHash.dateNum + '-' + encodeURIComponent(correctProdMap.Mapping) + '-' + false + '-' + false + '-fcst'
+            const prodId = prodHash.dateNum + '-' + encodeURIComponent(correctProdMap.Mapping) + '-' + prodHash.salesOrderType + '-' + false + '-' + false +'-fcst'
             const remainingStockAdj = (parseInt(prodHash.dateNum) > currentDateNum ? - (parseFloat(prodHash.quantity)) : 0)
 
             const futureRevenue = (stockFcstDateNum >= prevMondayNum) ? parseFloat(prodHash.revenue) : 0;
@@ -87,8 +87,8 @@ const pivotTablePrep = (cleanedData, prodMap) => {
                         id: prodId,
                         dateNum: parseInt(prodHash.dateNum),
                         prodMap: correctProdMap.Mapping,
-                        mapExclDate: encodeURIComponent(prodHash.product) + '-' + false + '-' + false,
                         customerType: prodHash.customerType,
+                        customerName: '',
                         salesOrderType: prodHash.salesOrderType,
                         quantity: parseFloat(prodHash.quantity),
                         quantityAct: 0,
@@ -108,7 +108,7 @@ const pivotTablePrep = (cleanedData, prodMap) => {
                     pivotTableData.byHash[prodId].quantityVar = pivotTableData.byHash[prodId].quantityVar - parseFloat(prodHash.quantity)
                     pivotTableData.byHash[prodId].futureRevenue = pivotTableData.byHash[prodId].futureRevenue + futureRevenue,
                         pivotTableData.byHash[prodId].revenue = pivotTableData.byHash[prodId].revenue + parseFloat(prodHash.revenue)
-                    pivotTableData.byHash[prodId].revenueVar = pivotTableData.byHash[prodId].revenue - parseFloat(prodHash.revenue)
+                    pivotTableData.byHash[prodId].revenueVar = pivotTableData.byHash[prodId].revenueVar - parseFloat(prodHash.revenue)
                 }
             }
         }
@@ -121,7 +121,7 @@ const pivotTablePrep = (cleanedData, prodMap) => {
         let soHash = cleanedData.salesOrder.byHash[so];
         const salesOrderType = typeState(soHash.salesOrderType)
         const customerType = typeState(soHash.customerType)
-        const soId = soHash.dateNum + '-' + encodeURIComponent(soHash.prodMap) + '-' + salesOrderType + '-' + customerType + '-actual'
+        const soId = soHash.dateNum + '-' + encodeURIComponent(soHash.prodMap) + '-' + salesOrderType + '-' + customerType + '-' + false +'-actual'
         const finYr = cleanedData.dateMap.byHash[soHash.dateNum] != undefined ? cleanedData.dateMap.byHash[soHash.dateNum].finYear : dateMapConst();
 
 
@@ -135,8 +135,8 @@ const pivotTablePrep = (cleanedData, prodMap) => {
                     id: soId,
                     dateNum: parseInt(soHash.dateNum),
                     prodMap: soHash.prodMap,
-                    mapExclDate: encodeURIComponent(soHash.prodMap) + '-' + salesOrderType + '-' + customerType,
                     customerType: soHash.customerType,
+                    customerName: '',
                     salesOrderType: soHash.salesOrderType,
                     quantity: parseFloat(soHash.orderQuantity),
                     quantityAct: finYr === currentFinYr ? parseFloat(soHash.orderQuantity) : 0,
@@ -164,16 +164,16 @@ const pivotTablePrep = (cleanedData, prodMap) => {
             }
 
             //insert actuals as fcst prior to 3rd Sept 2018
-            if (soHash.dateNum < 43347) {
-                const soIdFcst = soHash.dateNum + '-' + encodeURIComponent(soHash.prodMap) + '-' + salesOrderType + '-' + customerType + '-fcst'
+            if (soHash.dateNum < 43346) {
+                const soIdFcst = soHash.dateNum + '-' + encodeURIComponent(soHash.prodMap) + '-' + salesOrderType + '-' + customerType + '-' + false +'-fcst'
                 if (pivotTableData.byHash[soIdFcst] === undefined) {
                     pivotTableData.byId.push(soIdFcst)
                     pivotTableData.byHash[soIdFcst] = {
                         id: soIdFcst,
                         dateNum: parseInt(soHash.dateNum),
                         prodMap: soHash.prodMap,
-                        mapExclDate: encodeURIComponent(soHash.prodMap) + '-' + salesOrderType + '-' + customerType,
                         customerType: soHash.customerType,
+                        customerName: '',
                         salesOrderType: soHash.salesOrderType,
                         quantity: parseFloat(soHash.orderQuantity),
                         quantityAct: 0,
@@ -202,7 +202,7 @@ const pivotTablePrep = (cleanedData, prodMap) => {
     cleanedData.stockOnHand.byId.forEach(soh => {
         let sohHash = cleanedData.stockOnHand.byHash[soh];
         const correctProdMap = encodeURIComponent(sohHash.prodMap);
-        let sohFcstId = prevMondayNum + '-' + correctProdMap + '-' + false + '-' + false + '-stockFcst'
+        let sohFcstId = prevMondayNum + '-' + correctProdMap + '-' + false + '-' + false + '-' + false + '-stockFcst'
         if (pivotTableData.byHash[sohFcstId] != undefined) {
             pivotTableData.byHash[sohFcstId].stockMovement += parseFloat(sohHash.availableQty)
 

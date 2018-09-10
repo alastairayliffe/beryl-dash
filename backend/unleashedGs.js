@@ -128,6 +128,7 @@ const newCode = (req, res) => {
 
 const unleashedFetchPrep = async (auth) => {
     let allFetchedData = {};
+    let exportData = {};
     return Promise.all([
         unleashedWithPage(auth, 'SalesOrders'),
     ])
@@ -154,15 +155,7 @@ const unleashedFetchPrep = async (auth) => {
             allFetchedData.dateMapping = unleashedResponse[5]
             allFetchedData.projectionsAdj = unleashedResponse[6]
             
-            return Promise.all([
-                //gsClear(auth, 'product-mapping!A2:E'),
-                gsClear(auth, 'customers!A2:D'),
-                gsClear(auth, 'inventory!A2:N'),
-                gsClear(auth, 'sales-orders!A2:AE'),
-                gsClear(auth, 'adjustments!A2:X'),
-                gsClear(auth, 'pivot!A2:AB'),
-                gsClear(auth, 'stock-summary!A2:C'),
-            ])
+
 
 
         })
@@ -170,16 +163,30 @@ const unleashedFetchPrep = async (auth) => {
             return cleanData(allFetchedData)
         })
         .then(cleanedData => exportPrep(cleanedData))
-        .then(cleanedData => {
-            console.log('pivot', cleanedData.pivot.export)
+
+        .then(cleanedDataFinal => {
+            exportData = cleanedDataFinal
             return Promise.all([
-                itemsToGs(auth, cleanedData.customers, 'customers!A2:D'),
-                itemsToGs(auth, cleanedData.stockOnHand, 'inventory!A2:N'),
-                itemsToGs(auth, cleanedData.pivot.export, 'pivot!A2:AB'),
-                itemsToGs(auth, cleanedData.prodMap.export, 'product-mapping!A2:E'),
-                itemsToGs(auth, cleanedData.salesOrder, 'sales-orders!A2:AG'),
-                itemsToGs(auth, cleanedData.stockAdjustments, 'adjustments!A2:Y'),
-                itemsToGs(auth, cleanedData.mappingSummary, 'stock-summary!A2:C'),
+                gsClear(auth, 'product-mapping!A2:E'),
+                gsClear(auth, 'customers!A2:D'),
+                gsClear(auth, 'inventory!A2:N'),
+                gsClear(auth, 'sales-orders!A2:AE'),
+                gsClear(auth, 'adjustments!A2:X'),
+                gsClear(auth, 'pivot!A2:AB'),
+                gsClear(auth, 'stock-summary!A2:C'),
+            ])
+        }
+        )
+        .then(() => {
+            console.log('pivot', exportData.pivot.export)
+            return Promise.all([
+                itemsToGs(auth, exportData.customers, 'customers!A2:D'),
+                itemsToGs(auth, exportData.stockOnHand, 'inventory!A2:N'),
+                itemsToGs(auth, exportData.pivot.export, 'pivot!A2:AB'),
+                itemsToGs(auth, exportData.prodMap.export, 'product-mapping!A2:E'),
+                itemsToGs(auth, exportData.salesOrder, 'sales-orders!A2:AG'),
+                itemsToGs(auth, exportData.stockAdjustments, 'adjustments!A2:Y'),
+                itemsToGs(auth, exportData.mappingSummary, 'stock-summary!A2:C'),
             ])
          })
         .catch(err => {
